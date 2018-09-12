@@ -25,22 +25,42 @@ let previousTime = (new Date()).getTime();
 let started = false;
 
 
+const SKIP_SLIDESHOW = false;
+const SHOW_FPS = true;
+
+
+
+
+
+
+
+
 // const CANVAS_WIDTH = 800;
 // const CANVAS_HEIGHT = 600;
 const CANVAS_WIDTH = window.innerWidth;
 const CANVAS_HEIGHT = window.innerHeight;
 
-const TIME = {
-    IMG_ENTER : 0.25,
-    IMG_DISPLAY : 3.0,
-    WAIT : 1,
+const TOTAL_VIDEO_TIME = 180;   // in seconds
+
+let TIME = {
+    IMG_ENTER : 0,
+    IMG_DISPLAY : 0,
+    WAIT : 0,
     PHASE_2_DELAY : 2,
     PHASE_3_DELAY : 10,
+    PIC_INTERVAL : 0.25,
+    ALPHA_TIME : 1,
 };
-const MOVE_SPEED_PHASE_1 = 2;
+const MOVE_SPEED_PHASE_1 = 0.3;
 const MOVE_SPEED_PHASE_2 = 0.1;
 const MOVE_SPEED_PHASE_3 = 0.1;
 let moveSpeed = MOVE_SPEED_PHASE_1;
+
+const setPicInterval = function(picCount){
+    TIME.PIC_INTERVAL = (180 - TIME.PHASE_2_DELAY - TIME.PHASE_3_DELAY) / picCount;
+    console.log("Pic Interval: " + TIME.PIC_INTERVAL);
+};
+
 
 const Transform = function(x, y, w, h){
     this.x = x;
@@ -48,17 +68,38 @@ const Transform = function(x, y, w, h){
     this.w = w;
     this.h = h;
     this.moveTo = function(dest, deltaTime){
+
+        // if(dest.x > 1 || dest.x < 0)
+        //     console.log("x", dest.x);
+        // if(dest.y > 1 || dest.y < 0)
+        //     console.log("y", dest.y);
+
+        // Can we do some pythagoras stuff here? Maybe? Performance issues?
+        // Don't need pythagoras - just ratios!
         let keys = ["x", "y", "w", "h"];
+        let deltaX = dest.x - this.x;
+        let deltaY = dest.y - this.y;
+        let deltaW = dest.w - this.w;
+        let deltaH = dest.h - this.h;
+        let ratios = [1, Math.abs(deltaY/deltaX), 1, Math.abs(deltaH/deltaW)];
+        // console.log(dest.y, this.y, deltaTime, moveSpeed, ratios.length);
         for(let k in keys){
             let key = keys[k];
+            let ratio = ratios[k];
+            if(isNaN(ratio))
+                ratio = 1;
+            // let ratio = 1;
             if(this[key] < dest[key]){
-                this[key] += deltaTime * moveSpeed;
+                this[key] += deltaTime * moveSpeed * ratio;
                 if(this[key] > dest[key]) this[key] = dest[key];
+                // console.log("a", key, this[key]);
             } else {
-                this[key] -= deltaTime * moveSpeed;
+                this[key] -= deltaTime * moveSpeed * ratio;
                 if(this[key] < dest[key]) this[key] = dest[key];
+                // console.log("b", key, this[key]);
             }
         }
+        // console.log(this.x, this.y, this.w, this.h);
     };
     this.set = function(target){
         this.x = target.x;
@@ -84,7 +125,7 @@ const Image = function(img, x, y, w, h){
 
     this.visible = false;
     this.alpha = 0;
-    this.stage = 0;         //0 nothing, 1 entry, 2 display, 3 relocate
+    // this.stage = 0;         //0 nothing, 1 entry, 2 display, 3 relocate
 };
 let imagePixels = [];
 
@@ -168,6 +209,8 @@ const SetUpImagePixels = function(baseImg){
     console.log(imagePixels.length + " Image Pixels vs " + images.length + " input images");
     imagePixels = shuffle(imagePixels);
     console.log("image pixels shuffled");
+
+    setPicInterval(imagePixels.length);
 };
 
 
@@ -218,7 +261,9 @@ const update = () => {
         if(started === true && imagePixels[i].currentPos.compare(imagePixels[i].destPos))
             continue;
 
-        AnimateImage(imagePixels[i], deltaTime);
+        // console.log(imagePixels[i].alpha);
+        if(started === true)
+            AnimateImage(imagePixels[i], deltaTime);
 
         let img = imagePixels[i];
         ctx.globalAlpha = (started) ? img.alpha : 1;
@@ -229,15 +274,17 @@ const update = () => {
         ctx.drawImage(img.image,x,y,w,h);
     }
 
-    ctx.font="12px Arial";
-    ctx.fillStyle="white";
-    ctx.fillText(fps,10,10);
+    if(SHOW_FPS){
+        ctx.globalAlpha = 1;
+        ctx.font="12px Arial";
+        ctx.fillStyle="white";
+        ctx.fillText(fps,10,10);
+    }
 };
 
 const StartButton = function(){
     started = true;
-    const skipSlideshow = false;
-    if(skipSlideshow === false)
+    if(SKIP_SLIDESHOW === false)
         ScheduleImages();
     else{
         for(let i in imagePixels){
@@ -251,21 +298,24 @@ const StartButton = function(){
 
 const AnimateImage = function(imgPx, deltaTime){
 
-    let percChange = deltaTime / TIME.IMG_ENTER;
+    // let percChange = deltaTime / TIME.IMG_ENTER;
+    let percChange = deltaTime / TIME.ALPHA_TIME;
+    // console.log(percChange);
 
-    switch (imgPx.stage){
-        case 1:
+    // switch (imgPx.stage){
+        // case 1:
             imgPx.alpha += percChange;
             if(imgPx.alpha > 1) imgPx.alpha = 1;
-            break;
-        case 3:
+            // console.log(imgPx.alpha);
+            // break;
+        // case 3:
             let before = imgPx.currentPos.compare(imgPx.destPos);
             imgPx.currentPos.moveTo(imgPx.destPos, deltaTime);
             let after = imgPx.currentPos.compare(imgPx.destPos);
             if(before === false && after == true)
                 DrawToSecondCanvas(imgPx);
-            break;
-    }
+            // break;
+    // }
 };
 
 const DrawToSecondCanvas = function(img){
@@ -274,12 +324,13 @@ const DrawToSecondCanvas = function(img){
     let x = img.currentPos.x * canvas.width;
     let y = img.currentPos.y * canvas.height;
     ctx2.drawImage(img.image,x,y,w,h);
+    img.alpha = 1;
 };
 
 const ScheduleImages = function(){
     let counter = 0;
     let loop;
-    const totalTime = TIME.IMG_ENTER + TIME.IMG_DISPLAY + TIME.WAIT;
+    // const totalTime = TIME.IMG_ENTER + TIME.IMG_DISPLAY + TIME.WAIT;
     loop = setInterval(function(){
 
         let img = imagePixels[counter];
@@ -287,20 +338,22 @@ const ScheduleImages = function(){
 
         img.visible = true;
         img.currentPos.set(img.startPos);
-        ++img.stage;
-        setTimeout(function(){
-            ++img.stage;
-            setTimeout(function(){
-                ++img.stage;
-            }, TIME.IMG_DISPLAY * 1000);
-        }, TIME.IMG_ENTER * 1000);
+        // img.alpha = 0;
+        // ++img.stage;
+        // setTimeout(function(){
+        //     ++img.stage;
+        //     setTimeout(function(){
+        //         ++img.stage;
+        //     }, TIME.IMG_DISPLAY * 1000);
+        // }, TIME.IMG_ENTER * 1000);
 
         if(counter >= imagePixels.length){
             clearInterval(loop);
             setTimeout(Phase2, TIME.PHASE_2_DELAY * 1000);
         }
 
-    }, totalTime * 1000);
+    // }, totalTime * 1000);
+    }, TIME.PIC_INTERVAL * 1000);
 };
 
 const Phase2 = function(){
@@ -360,19 +413,26 @@ const shuffle = function(array) {
 const getImgFullscreenScale = function(img){
     let w = img.width;
     let h = img.height;
-    let ratio = Math.max(w, h) / Math.min(w, h);
-    let coeff = Math.min(w, h);
-    let canvasRatio = Math.max(canvas.width, canvas.height) / Math.min(canvas.width, canvas.height);
-    let canvasCoeff = Math.min(canvas.width, canvas.height);
+    // let ratio = Math.max(w, h) / Math.min(w, h);
+    // let coeff = 1;
+    // let canvasRatio = Math.max(canvas.width, canvas.height) / Math.min(canvas.width, canvas.height);
+    // let canvasCoeff = 1;
     let finalWidth = 1;
     let finalHeight = 1;
 
-    if(h > w){
-        finalHeight = 1;
-        // finalWidth = 
-        // final width will be 50% of 150%, so math that out
-    }
+    // console.log(ratio, coeff, canvasRatio, canvasCoeff);
 
-    let transform = new Transform(0,0,1,1);
+    // if(h > w){
+    //     finalHeight = 1;
+    //     // finalWidth = 
+    //     // final width will be 50% of 150%, so math that out
+    // }
+
+    finalWidth = (w/h) / (CANVAS_WIDTH/CANVAS_HEIGHT);
+    // console.log((w/h), CANVAS_WIDTH, CANVAS_HEIGHT, (CANVAS_WIDTH/CANVAS_HEIGHT), finalWidth);
+
+    let randomX = Math.random() * (1 - finalWidth);
+
+    let transform = new Transform(randomX,0,finalWidth,finalHeight);
     return transform;
 };
