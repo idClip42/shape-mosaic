@@ -10,6 +10,9 @@
             padding: 0;
             margin: 0;
         }
+        img{
+            width:20px;
+        }
         canvas{
             background-color: white;
             margin: 0;
@@ -18,14 +21,17 @@
 </head>
 <body>
     <script src='client.js'></script>
+
+    <div id="loading"><p><h1>LOADING...</h1></p></div>
     
 	<canvas id="canvas">Get a real browser!</canvas>
 	<canvas id="canvas2" hidden>Get a real browser!</canvas>
 
-    <button id="startButton">START!</button>
-    <div id="photos" hidden></div>
+    <button id="startButton" disabled>START!</button>
+    <div id="photos"></div>
     <img id="base1" src="/baseImages/base1.jpg" hidden>
     <img id="base2" src="/baseImages/base2.jpg" hidden>
+    <img id="final" src="/baseImages/final.jpg" hidden>
 
 </body>
 </html>

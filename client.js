@@ -17,6 +17,7 @@ let images = [];
 let imgCount = 0;
 let baseImg1;
 let baseImg2;
+let finalImg;
 let baseImg2TransformSet = [];
 
 let deltaTime = 0;
@@ -26,9 +27,10 @@ let started = false;
 
 
 const SKIP_SLIDESHOW = false;
-const SHOW_FPS = true;
-
-
+const SHOW_FPS = false;
+const PICS_AT_ONCE = 2;
+const PIC_MULTIPLIER = 2;
+const TOTAL_VIDEO_TIME = 180;   // in seconds
 
 
 
@@ -40,24 +42,25 @@ const SHOW_FPS = true;
 const CANVAS_WIDTH = window.innerWidth;
 const CANVAS_HEIGHT = window.innerHeight;
 
-const TOTAL_VIDEO_TIME = 180;   // in seconds
 
 let TIME = {
     IMG_ENTER : 0,
     IMG_DISPLAY : 0,
     WAIT : 0,
-    PHASE_2_DELAY : 2,
+    PHASE_2_DELAY : 10,
     PHASE_3_DELAY : 10,
     PIC_INTERVAL : 0.25,
-    ALPHA_TIME : 1,
+    ALPHA_TIME : 1.5,
+    FINAL_IMG_DELAY: 1,
+    INIT_DELAY: 2,
 };
-const MOVE_SPEED_PHASE_1 = 0.3;
-const MOVE_SPEED_PHASE_2 = 0.1;
-const MOVE_SPEED_PHASE_3 = 0.1;
+const MOVE_SPEED_PHASE_1 = 0.2;
+const MOVE_SPEED_PHASE_2 = 0.01;
+const MOVE_SPEED_PHASE_3 = 0.005;
 let moveSpeed = MOVE_SPEED_PHASE_1;
 
 const setPicInterval = function(picCount){
-    TIME.PIC_INTERVAL = (180 - TIME.PHASE_2_DELAY - TIME.PHASE_3_DELAY) / picCount;
+    TIME.PIC_INTERVAL = (TOTAL_VIDEO_TIME - TIME.PHASE_2_DELAY - TIME.PHASE_3_DELAY - TIME.FINAL_IMG_DELAY) / (picCount / PICS_AT_ONCE);
     console.log("Pic Interval: " + TIME.PIC_INTERVAL);
 };
 
@@ -101,6 +104,15 @@ const Transform = function(x, y, w, h){
         }
         // console.log(this.x, this.y, this.w, this.h);
     };
+    this.lerp = function(start, end, perc){
+        let keys = ["x", "y", "w", "h"];
+        for(let k in keys){
+            let key = keys[k];
+            // console.log(this, start, end);
+            // console.log(perc);
+            this[key] = start[key] + (end[key] - start[key]) * perc;
+        }
+    };
     this.set = function(target){
         this.x = target.x;
         this.y = target.y;
@@ -108,10 +120,25 @@ const Transform = function(x, y, w, h){
         this.h = target.h;
     };
     this.compare = function(target){
-        return (this.x == target.x &&
-        this.y == target.y &&
-        this.w == target.w &&
-        this.h == target.h);
+
+        // if(this === imagePixels[0].currentPos)
+        //     console.log(Math.abs(this.x - target.x), Math.abs(this.y - target.y), Math.abs(this.w - target.w), Math.abs(this.h - target.h));
+
+        let equalish = function(a, b){
+            // if(this === imagePixels[0].currentPos)
+                // console.log(Math.abs(a-b));
+            return Math.abs(a-b) < 0.00001;
+        };
+
+        // return (this.x == target.x &&
+        // this.y == target.y &&
+        // this.w == target.w &&
+        // this.h == target.h);
+
+        return (equalish(this.x, target.x) &&
+        equalish(this.y, target.y) &&
+        equalish(this.w, target.w) &&
+        equalish(this.h, target.h));
     };
 }
 
@@ -122,6 +149,7 @@ const Image = function(img, x, y, w, h){
     this.startPos = new Transform(0,0,1,1);
     this.currentPos = new Transform(0,0,0,0);
     this.currentPos.set(this.destPos);
+    this.percentageDist = 0;
 
     this.visible = false;
     this.alpha = 0;
@@ -132,18 +160,33 @@ let imagePixels = [];
 const init = function(){
     baseImg1 = document.getElementById("base1");
     baseImg2 = document.getElementById("base2");
+    finalImg = document.getElementById("final");
     document.getElementById("startButton").onclick = StartButton;
 
-    httpGetAsync("imageList", function(res){
-        let photoDiv = document.getElementById("photos");
-        photoDiv.innerHTML = res;
-        images = photoDiv.getElementsByTagName("img");
-        imgCount = res.split("src").length - 1;
-        console.log(imgCount + " images")
-        initCanvas();
-    });
+    // httpGetAsync("imageList", function(res){
+    //     let photoDiv = document.getElementById("photos");
+    //     photoDiv.innerHTML = res;
+    //     images = photoDiv.getElementsByTagName("img");
+    //     imgCount = res.split("src").length - 1;
+    //     console.log(imgCount + " images")
+    //     initCanvas();
+    // });
 }
-window.onload = init;
+// window.onload = init;
+httpGetAsync("imageList", function(res){
+    let photoDiv = document.getElementById("photos");
+    photoDiv.innerHTML = res;
+    images = photoDiv.getElementsByTagName("img");
+    imgCount = res.split("src").length - 1;
+    console.log(imgCount + " images")
+
+    window.onload = function(){
+        let loading = document.getElementById("loading");
+        loading.parentElement.removeChild(loading);
+        init();
+        initCanvas();
+    };
+});
 
 
 
@@ -166,7 +209,7 @@ const GetImagePixelLocations = function(baseImg){
     }
 
     let percentage = goodPixels / totalPixels;
-    const imageCount = images.length;
+    const imageCount = images.length * PIC_MULTIPLIER;
     const totalNewPix = imageCount / percentage;
 
     const ratio = CANVAS_WIDTH / CANVAS_HEIGHT;
@@ -196,7 +239,7 @@ const GetImagePixelLocations = function(baseImg){
 
 const SetUpImagePixels = function(baseImg){
     let imgCounter = 0;
-    let transformArray = GetImagePixelLocations(baseImg);
+    let transformArray = GetImagePixelLocations(baseImg);   // This just needs more spots
     for(let i in transformArray){
         let img = images[imgCounter];
         let t = transformArray[i];
@@ -207,10 +250,14 @@ const SetUpImagePixels = function(baseImg){
     }
 
     console.log(imagePixels.length + " Image Pixels vs " + images.length + " input images");
+    if(imagePixels.length < images.length)
+        console.warn("WARNING! NOT ALL PICTURES USED! RESIZE THE THING!");
     imagePixels = shuffle(imagePixels);
     console.log("image pixels shuffled");
 
     setPicInterval(imagePixels.length);
+
+    document.getElementById("startButton").disabled = false;
 };
 
 
@@ -246,6 +293,7 @@ const update = () => {
     ctx.fillStyle="black";
     ctx.globalAlpha = 1;
     // ctx.fillRect(0, 0, canvas.width, canvas.height);
+
     ctx.drawImage(canvas2, 0, 0, canvas.width, canvas.height);
 
     let currentTime = (new Date()).getTime();
@@ -255,10 +303,13 @@ const update = () => {
     
     for(let i in imagePixels){
 
+        // if(imagePixels[i].image === finalImg)
+        //     console.log(imagePixels[i].alpha, imagePixels[i].visible);
+
         if(started === true && imagePixels[i].visible === false)
             continue;
 
-        if(started === true && imagePixels[i].currentPos.compare(imagePixels[i].destPos))
+        if(started === true && imagePixels[i].currentPos.compare(imagePixels[i].destPos) &&  (imagePixels[i].alpha === 1))
             continue;
 
         // console.log(imagePixels[i].alpha);
@@ -271,7 +322,13 @@ const update = () => {
         let h = img.currentPos.h * canvas.height;
         let x = img.currentPos.x * canvas.width;
         let y = img.currentPos.y * canvas.height;
-        ctx.drawImage(img.image,x,y,w,h);
+
+        try{
+            ctx.drawImage(img.image,x,y,w,h);
+        } catch(err){
+            // console.log(img.image);
+        }
+
     }
 
     if(SHOW_FPS){
@@ -284,15 +341,18 @@ const update = () => {
 
 const StartButton = function(){
     started = true;
+    document.getElementById("startButton").disabled = true;
     if(SKIP_SLIDESHOW === false)
-        ScheduleImages();
+        // ScheduleImages();
+        setTimeout(ScheduleImages, TIME.INIT_DELAY * 1000)
     else{
         for(let i in imagePixels){
             imagePixels[i].visible = true;
             imagePixels[i].alpha = 1;
             imagePixels[i].stage = 3;
         }
-        Phase2();
+        // Phase2();
+        setTimeout(Phase2, TIME.INIT_DELAY * 1000)
     }    
 };
 
@@ -304,14 +364,17 @@ const AnimateImage = function(imgPx, deltaTime){
 
     // switch (imgPx.stage){
         // case 1:
+            let before = imgPx.currentPos.compare(imgPx.destPos) && (imgPx.alpha === 1);
             imgPx.alpha += percChange;
             if(imgPx.alpha > 1) imgPx.alpha = 1;
             // console.log(imgPx.alpha);
             // break;
+            imgPx.percentageDist += moveSpeed * deltaTime;
+            if(imgPx.percentageDist > 1) imgPx.percentageDist = 1;
         // case 3:
-            let before = imgPx.currentPos.compare(imgPx.destPos);
-            imgPx.currentPos.moveTo(imgPx.destPos, deltaTime);
-            let after = imgPx.currentPos.compare(imgPx.destPos);
+            // imgPx.currentPos.moveTo(imgPx.destPos, deltaTime);
+            imgPx.currentPos.lerp(imgPx.startPos, imgPx.destPos, imgPx.percentageDist);
+            let after = imgPx.currentPos.compare(imgPx.destPos) && (imgPx.alpha === 1);
             if(before === false && after == true)
                 DrawToSecondCanvas(imgPx);
             // break;
@@ -323,7 +386,12 @@ const DrawToSecondCanvas = function(img){
     let h = img.currentPos.h * canvas.height;
     let x = img.currentPos.x * canvas.width;
     let y = img.currentPos.y * canvas.height;
-    ctx2.drawImage(img.image,x,y,w,h);
+    try{
+        ctx2.drawImage(img.image,x,y,w,h);
+    } catch(err){
+        console.log("Error drawing image");
+        console.log(img.image);
+    }
     img.alpha = 1;
 };
 
@@ -333,25 +401,27 @@ const ScheduleImages = function(){
     // const totalTime = TIME.IMG_ENTER + TIME.IMG_DISPLAY + TIME.WAIT;
     loop = setInterval(function(){
 
-        let img = imagePixels[counter];
-        ++counter;
+        for(let atOnce = 0; atOnce < PICS_AT_ONCE; ++atOnce){
+            let img = imagePixels[counter];
+            ++counter;
 
-        img.visible = true;
-        img.currentPos.set(img.startPos);
-        // img.alpha = 0;
-        // ++img.stage;
-        // setTimeout(function(){
-        //     ++img.stage;
-        //     setTimeout(function(){
-        //         ++img.stage;
-        //     }, TIME.IMG_DISPLAY * 1000);
-        // }, TIME.IMG_ENTER * 1000);
+            img.visible = true;
+            img.currentPos.set(img.startPos);
+            // img.alpha = 0;
+            // ++img.stage;
+            // setTimeout(function(){
+            //     ++img.stage;
+            //     setTimeout(function(){
+            //         ++img.stage;
+            //     }, TIME.IMG_DISPLAY * 1000);
+            // }, TIME.IMG_ENTER * 1000);
 
-        if(counter >= imagePixels.length){
-            clearInterval(loop);
-            setTimeout(Phase2, TIME.PHASE_2_DELAY * 1000);
+            if(counter >= imagePixels.length){
+                clearInterval(loop);
+                setTimeout(Phase2, TIME.PHASE_2_DELAY * 1000);
+                break;
+            }
         }
-
     // }, totalTime * 1000);
     }, TIME.PIC_INTERVAL * 1000);
 };
@@ -368,6 +438,8 @@ const Phase2 = function(){
         let img = imagePixels[i];
         let tr = baseImg2TransformSet[i % baseImg2TransformSet.length];
         img.destPos = tr;
+        img.startPos = img.currentPos;
+        img.percentageDist = 0;
     }
 
     setTimeout(Phase3, TIME.PHASE_3_DELAY * 1000);
@@ -383,14 +455,44 @@ const Phase3 = function(){
 
     for(let i in imagePixels){
         let img = imagePixels[i];
-        let rX = (Math.random() - 0.5);
-        rX += (rX > 0) ? 1 : -1;
-        let rY = (Math.random() - 0.5);
-        rY += (rY > 0) ? 1 : -1;
+        let angle = Math.random()*Math.PI*2;
+        let radius = 2;
+        // let rX = (Math.random() - 0.25);
+        // rX += (rX > 0) ? 1 : 0;
+        // rX *= 2;
+        let rX = Math.cos(angle)*radius;
+        // let rY = (Math.random() - 0.25);
+        // rY += (rY > 0) ? 1 : 0;
+        // rY *= 2;
+        let rY = Math.sin(angle)*radius;
+        
         let tr = new Transform(rX, rY, img.currentPos.w, img.currentPos.h);
+        // console.log(rX);
         img.destPos = tr;
+        img.startPos = img.currentPos;
+        img.percentageDist = 0;
     }
+    
+    setTimeout(Phase4, TIME.FINAL_IMG_DELAY * 1000);
 
+};
+
+const Phase4 = function(){
+    // console.log("Phase 4");
+
+    ctx2.clearRect(0,0, canvas.width, canvas.height);
+    ctx2.fillStyle="black";
+    ctx2.fillRect(0, 0, canvas.width, canvas.height);
+
+    // let img = images[imgCounter];
+    // let t = transformArray[i];
+    // imgCounter = (imgCounter + 1) % images.length;
+    let t = getImgFullscreenScale(finalImg, false);
+    let imgPx = new Image(finalImg, t.x, t.y, t.w, t.h);
+    imgPx.startPos = imgPx.destPos
+    imgPx.currentPos = imgPx.destPos;
+    imgPx.visible = true;
+    imagePixels.push(imgPx);
 };
 
 // Switch to different image, then have everyone fly away
@@ -410,7 +512,7 @@ const shuffle = function(array) {
     return array;
 }
 
-const getImgFullscreenScale = function(img){
+const getImgFullscreenScale = function(img, random = true){
     let w = img.width;
     let h = img.height;
     // let ratio = Math.max(w, h) / Math.min(w, h);
@@ -419,6 +521,8 @@ const getImgFullscreenScale = function(img){
     // let canvasCoeff = 1;
     let finalWidth = 1;
     let finalHeight = 1;
+    let randomX = 0;
+    let randomY = 0;
 
     // console.log(ratio, coeff, canvasRatio, canvasCoeff);
 
@@ -429,10 +533,17 @@ const getImgFullscreenScale = function(img){
     // }
 
     finalWidth = (w/h) / (CANVAS_WIDTH/CANVAS_HEIGHT);
+
+    if(random){
+        finalHeight *= 1/2;
+        finalWidth *= 1/2;
+        randomX = Math.random() * (1 - finalWidth);
+        randomY = Math.random() * (1 - finalHeight);
+    }
+
     // console.log((w/h), CANVAS_WIDTH, CANVAS_HEIGHT, (CANVAS_WIDTH/CANVAS_HEIGHT), finalWidth);
 
-    let randomX = Math.random() * (1 - finalWidth);
 
-    let transform = new Transform(randomX,0,finalWidth,finalHeight);
+    let transform = new Transform(randomX,randomY,finalWidth,finalHeight);
     return transform;
 };
