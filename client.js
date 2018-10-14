@@ -28,9 +28,9 @@ let started = false;
 
 const SKIP_SLIDESHOW = false;
 const SHOW_FPS = false;
-const PICS_AT_ONCE = 2;
+const PICS_AT_ONCE = 3;
 const PIC_MULTIPLIER = 2;
-const TOTAL_VIDEO_TIME = 180;   // in seconds
+const TOTAL_VIDEO_TIME = 174;   // in seconds
 
 
 
@@ -488,6 +488,7 @@ const Phase4 = function(){
     // let t = transformArray[i];
     // imgCounter = (imgCounter + 1) % images.length;
     let t = getImgFullscreenScale(finalImg, false);
+    t.x += t.w / 6;
     let imgPx = new Image(finalImg, t.x, t.y, t.w, t.h);
     imgPx.startPos = imgPx.destPos
     imgPx.currentPos = imgPx.destPos;
