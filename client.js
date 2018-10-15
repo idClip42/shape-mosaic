@@ -32,6 +32,10 @@ const PICS_AT_ONCE = 3;
 const PIC_MULTIPLIER = 2;
 const TOTAL_VIDEO_TIME = 174;   // in seconds
 
+// const GET_SINGLE_IMAGE = true;
+// const IMG_DIM_X = 6000;
+// const IMG_DIM_Y = 4000;
+
 
 
 
@@ -162,6 +166,7 @@ const init = function(){
     baseImg2 = document.getElementById("base2");
     finalImg = document.getElementById("final");
     document.getElementById("startButton").onclick = StartButton;
+    document.getElementById("imgButton").onclick = singleImage;
 
     // httpGetAsync("imageList", function(res){
     //     let photoDiv = document.getElementById("photos");
@@ -258,6 +263,7 @@ const SetUpImagePixels = function(baseImg){
     setPicInterval(imagePixels.length);
 
     document.getElementById("startButton").disabled = false;
+    document.getElementById("imgButton").disabled = false;
 };
 
 
@@ -284,8 +290,38 @@ const initCanvas = function(){
     ctx2.fillStyle="black";
     ctx2.fillRect(0, 0, canvas.width, canvas.height);
 
+    // if(GET_SINGLE_IMAGE === false)
     update();
 }
+
+const singleImage = () =>{
+    canvas.width = document.getElementById("pic-width").value;
+    canvas.height = document.getElementById("pic-height").value;
+
+    ctx.clearRect(0,0, canvas.width, canvas.height);
+    ctx.fillStyle="black";
+    ctx.fillRect(0,0, canvas.width, canvas.height);
+    ctx.globalAlpha = 1;
+
+    for(let i in imagePixels){
+        let img = imagePixels[i];
+        let w = img.currentPos.w * canvas.width;
+        let h = img.currentPos.h * canvas.height;
+        let x = img.currentPos.x * canvas.width;
+        let y = img.currentPos.y * canvas.height;
+        try{
+            ctx.drawImage(img.image,x,y,w,h);
+        } catch(err){
+            // console.log(img.image);
+        }
+    }
+
+    var dataURL = canvas.toDataURL();
+    document.getElementById("canvasImg").src = dataURL;
+
+    canvas.width = CANVAS_WIDTH;
+    canvas.height = CANVAS_HEIGHT;
+};
 
 const update = () => {
     requestAnimationFrame(update);
@@ -340,6 +376,10 @@ const update = () => {
 };
 
 const StartButton = function(){
+    // if(GET_SINGLE_IMAGE === true){
+    //     singleImage();
+    //     return;
+    // }
     started = true;
     document.getElementById("startButton").disabled = true;
     if(SKIP_SLIDESHOW === false)
