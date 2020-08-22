@@ -555,8 +555,8 @@ const getImgFullscreenScale = function(img, random = true){
     finalWidth = (w/h) / (CANVAS_WIDTH/CANVAS_HEIGHT);
 
     if(random){
-        finalHeight *= 1/2;
-        finalWidth *= 1/2;
+        finalHeight *= CONFIG.PIC_SCALE;
+        finalWidth *= CONFIG.PIC_SCALE;
         randomX = Math.random() * (1 - finalWidth);
         randomY = Math.random() * (1 - finalHeight);
     }
