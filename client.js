@@ -29,8 +29,8 @@ let started = false;
 const SKIP_SLIDESHOW = false;
 const SHOW_FPS = false;
 const PICS_AT_ONCE = 3;
-const PIC_MULTIPLIER = 2;
-const TOTAL_VIDEO_TIME = 174;   // in seconds
+const PIC_MULTIPLIER = 100;
+const TOTAL_VIDEO_TIME = 60;   // in seconds
 
 // const GET_SINGLE_IMAGE = true;
 // const IMG_DIM_X = 6000;

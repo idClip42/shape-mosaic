@@ -114,8 +114,3 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
-
-images/*
-images_fullres/*
-baseimages/*
-node_modules/*
