@@ -35,6 +35,9 @@ app.get('/', function (req, res) {
 app.get('/client.js', function (req, res) {
     res.sendFile(__dirname + '/client.js');
 });
+app.get('/config.js', function (req, res) {
+    res.sendFile(__dirname + '/config.js');
+});
 app.get('/images/*', function (req, res) {
     res.sendFile(__dirname + req.url);
 });

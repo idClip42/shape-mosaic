@@ -25,13 +25,6 @@ let previousTime = (new Date()).getTime();
 
 let started = false;
 
-
-const SKIP_SLIDESHOW = false;
-const SHOW_FPS = false;
-const PICS_AT_ONCE = 3;
-const PIC_MULTIPLIER = 100;
-const TOTAL_VIDEO_TIME = 60;   // in seconds
-
 // const GET_SINGLE_IMAGE = true;
 // const IMG_DIM_X = 6000;
 // const IMG_DIM_Y = 4000;
@@ -47,25 +40,11 @@ const CANVAS_WIDTH = window.innerWidth;
 const CANVAS_HEIGHT = window.innerHeight;
 
 
-let TIME = {
-    IMG_ENTER : 0,
-    IMG_DISPLAY : 0,
-    WAIT : 0,
-    PHASE_2_DELAY : 10,
-    PHASE_3_DELAY : 10,
-    PIC_INTERVAL : 0.25,
-    ALPHA_TIME : 1.5,
-    FINAL_IMG_DELAY: 1,
-    INIT_DELAY: 2,
-};
-const MOVE_SPEED_PHASE_1 = 0.2;
-const MOVE_SPEED_PHASE_2 = 0.01;
-const MOVE_SPEED_PHASE_3 = 0.005;
-let moveSpeed = MOVE_SPEED_PHASE_1;
+let moveSpeed = CONFIG.MOVE_SPEED_PHASE_1;
 
 const setPicInterval = function(picCount){
-    TIME.PIC_INTERVAL = (TOTAL_VIDEO_TIME - TIME.PHASE_2_DELAY - TIME.PHASE_3_DELAY - TIME.FINAL_IMG_DELAY) / (picCount / PICS_AT_ONCE);
-    console.log("Pic Interval: " + TIME.PIC_INTERVAL);
+    CONFIG.TIME.PIC_INTERVAL = (CONFIG.TOTAL_VIDEO_TIME - CONFIG.TIME.PHASE_2_DELAY - CONFIG.TIME.PHASE_3_DELAY - CONFIG.TIME.FINAL_IMG_DELAY) / (picCount / CONFIG.PICS_AT_ONCE);
+    console.log("Pic Interval: " + CONFIG.TIME.PIC_INTERVAL);
 };
 
 
@@ -214,7 +193,7 @@ const GetImagePixelLocations = function(baseImg){
     }
 
     let percentage = goodPixels / totalPixels;
-    const imageCount = images.length * PIC_MULTIPLIER;
+    const imageCount = images.length * CONFIG.PIC_MULTIPLIER;
     const totalNewPix = imageCount / percentage;
 
     const ratio = CANVAS_WIDTH / CANVAS_HEIGHT;
@@ -367,7 +346,7 @@ const update = () => {
 
     }
 
-    if(SHOW_FPS){
+    if(CONFIG.SHOW_FPS){
         ctx.globalAlpha = 1;
         ctx.font="12px Arial";
         ctx.fillStyle="white";
@@ -382,9 +361,9 @@ const StartButton = function(){
     // }
     started = true;
     document.getElementById("startButton").disabled = true;
-    if(SKIP_SLIDESHOW === false)
+    if(CONFIG.SKIP_SLIDESHOW === false)
         // ScheduleImages();
-        setTimeout(ScheduleImages, TIME.INIT_DELAY * 1000)
+        setTimeout(ScheduleImages, CONFIG.TIME.INIT_DELAY * 1000)
     else{
         for(let i in imagePixels){
             imagePixels[i].visible = true;
@@ -392,14 +371,14 @@ const StartButton = function(){
             imagePixels[i].stage = 3;
         }
         // Phase2();
-        setTimeout(Phase2, TIME.INIT_DELAY * 1000)
+        setTimeout(Phase2, CONFIG.TIME.INIT_DELAY * 1000)
     }    
 };
 
 const AnimateImage = function(imgPx, deltaTime){
 
     // let percChange = deltaTime / TIME.IMG_ENTER;
-    let percChange = deltaTime / TIME.ALPHA_TIME;
+    let percChange = deltaTime / CONFIG.TIME.ALPHA_TIME;
     // console.log(percChange);
 
     // switch (imgPx.stage){
@@ -441,7 +420,7 @@ const ScheduleImages = function(){
     // const totalTime = TIME.IMG_ENTER + TIME.IMG_DISPLAY + TIME.WAIT;
     loop = setInterval(function(){
 
-        for(let atOnce = 0; atOnce < PICS_AT_ONCE; ++atOnce){
+        for(let atOnce = 0; atOnce < CONFIG.PICS_AT_ONCE; ++atOnce){
             let img = imagePixels[counter];
             ++counter;
 
@@ -458,17 +437,17 @@ const ScheduleImages = function(){
 
             if(counter >= imagePixels.length){
                 clearInterval(loop);
-                setTimeout(Phase2, TIME.PHASE_2_DELAY * 1000);
+                setTimeout(Phase2, CONFIG.TIME.PHASE_2_DELAY * 1000);
                 break;
             }
         }
     // }, totalTime * 1000);
-    }, TIME.PIC_INTERVAL * 1000);
+    }, CONFIG.TIME.PIC_INTERVAL * 1000);
 };
 
 const Phase2 = function(){
 
-    moveSpeed = MOVE_SPEED_PHASE_2;
+    moveSpeed = CONFIG.MOVE_SPEED_PHASE_2;
 
     ctx2.clearRect(0,0, canvas.width, canvas.height);
     ctx2.fillStyle="black";
@@ -482,12 +461,12 @@ const Phase2 = function(){
         img.percentageDist = 0;
     }
 
-    setTimeout(Phase3, TIME.PHASE_3_DELAY * 1000);
+    setTimeout(Phase3, CONFIG.TIME.PHASE_3_DELAY * 1000);
 };
 
 const Phase3 = function(){
 
-    moveSpeed = MOVE_SPEED_PHASE_3;
+    moveSpeed = CONFIG.MOVE_SPEED_PHASE_3;
 
     ctx2.clearRect(0,0, canvas.width, canvas.height);
     ctx2.fillStyle="black";
@@ -513,7 +492,7 @@ const Phase3 = function(){
         img.percentageDist = 0;
     }
     
-    setTimeout(Phase4, TIME.FINAL_IMG_DELAY * 1000);
+    setTimeout(Phase4, CONFIG.TIME.FINAL_IMG_DELAY * 1000);
 
 };
 
