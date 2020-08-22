@@ -3,8 +3,8 @@ const CONFIG = {
     SKIP_SLIDESHOW          : false,
     SHOW_FPS                : false,
     PICS_AT_ONCE            : 3,
-    PIC_MULTIPLIER          : 100,
-    TOTAL_VIDEO_TIME        : 15,   // in seconds
+    PIC_MULTIPLIER          : 50,
+    TOTAL_VIDEO_TIME        : 30,   // in seconds
 
     TIME                    : {
         IMG_ENTER           : 0,
@@ -22,5 +22,4 @@ const CONFIG = {
     MOVE_SPEED_PHASE_1      : 0.2,
     MOVE_SPEED_PHASE_2      : 0.01,
     MOVE_SPEED_PHASE_3      : 0.005,
-
 };
