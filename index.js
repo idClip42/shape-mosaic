@@ -17,15 +17,22 @@ const url  = require('url');
 let imageFiles;
 let imageHTML = "";
 
+console.log("Reading files in folder....");
+
 fs.readdir(__dirname + "/images", function(err, items) {
     imageFiles = items;
+    let imageCount = 0;
+    console.log("Checking " + imageFiles.length + " files...");
     // console.log(items.length, "images");
     for(let i in imageFiles){
         // if(!imageFiles[i].includes(IMAGE_EXT)) continue;
         if(!checkFileExtension(imageFiles[i])) continue;
         imageHTML += '<img src="' + IMAGE_DIR+imageFiles[i] + '">';
         // console.log(imageFiles[i]);
+        imageCount++;
     }
+    console.log("Registered " + imageCount + " images.");
+    console.log("Ready");
 });
 
 const checkFileExtension = function(file){
