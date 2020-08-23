@@ -17,6 +17,12 @@ const url  = require('url');
 let imageFiles;
 let imageHTML = "";
 
+console.log("");
+console.log("*******************************************");
+console.log("WE RECOMMEND CONVERTING ALL FILES TO JPEGS");
+console.log("*******************************************");
+console.log("");
+
 console.log("Reading files in folder....");
 
 fs.readdir(__dirname + "/images", function(err, items) {
