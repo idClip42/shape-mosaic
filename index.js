@@ -54,6 +54,7 @@ app.get('/config.js', function (req, res) {
     res.sendFile(__dirname + '/config.js');
 });
 app.get('/images/*', function (req, res) {
+    req.url = req.url.replace("%20", " ");
     res.sendFile(__dirname + req.url);
 });
 app.get('/baseImages/*', function (req, res) {
