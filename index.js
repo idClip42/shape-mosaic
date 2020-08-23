@@ -7,7 +7,7 @@ const IMAGE_EXT = [
     ".png", 
     ".tiff",
     ".PNG",
-    ".HEIC"
+    // ".HEIC" // This won't load in browser
 ];
 
 const express = require('express');
