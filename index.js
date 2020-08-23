@@ -1,6 +1,14 @@
 const IMAGE_DIR = "/images/";
 // const IMAGE_EXT = ".jpg";
-const IMAGE_EXT = [".jpg", ".JPG", ".jpeg", ".png", ".tiff"];
+const IMAGE_EXT = [
+    ".jpg", 
+    ".JPG", 
+    ".jpeg", 
+    ".png", 
+    ".tiff",
+    ".PNG",
+    ".HEIC"
+];
 
 const express = require('express');
 const fs = require('fs');
