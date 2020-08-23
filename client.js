@@ -270,7 +270,7 @@ const initCanvas = function(){
     ctx2.fillRect(0, 0, canvas.width, canvas.height);
 
     // if(GET_SINGLE_IMAGE === false)
-    update();
+    draw();
 }
 
 const singleImage = () =>{
@@ -302,8 +302,7 @@ const singleImage = () =>{
     canvas.height = CANVAS_HEIGHT;
 };
 
-const update = () => {
-    requestAnimationFrame(update);
+const draw = () => {
     ctx.clearRect(0,0, canvas.width, canvas.height);
     ctx.fillStyle="black";
     ctx.globalAlpha = 1;
@@ -345,6 +344,12 @@ const update = () => {
         }
 
     }
+};
+
+const update = () => {
+    requestAnimationFrame(update);
+
+    draw();
 
     if(CONFIG.SHOW_FPS){
         ctx.globalAlpha = 1;
@@ -373,6 +378,7 @@ const StartButton = function(){
         // Phase2();
         setTimeout(Phase2, CONFIG.TIME.INIT_DELAY * 1000)
     }    
+    update();
 };
 
 const AnimateImage = function(imgPx, deltaTime){
