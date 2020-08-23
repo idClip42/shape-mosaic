@@ -158,17 +158,40 @@ const init = function(){
 }
 // window.onload = init;
 httpGetAsync("imageList", function(res){
+
     let photoDiv = document.getElementById("photos");
+    let loadingDiv = document.getElementById("loading");
+
     photoDiv.innerHTML = res;
     images = photoDiv.getElementsByTagName("img");
     imgCount = res.split("src").length - 1;
     console.log(imgCount + " images")
 
+    photoDiv.hidden = true;
+    let imgs = document.images;
+    let len = imgs.length;
+    let counter = 0;
+    [].forEach.call( imgs, function( img ) {
+        if(img.complete)
+            incrementCounter();
+        else
+            img.addEventListener( 'load', incrementCounter, false );
+    });
+    function incrementCounter() {
+        counter++;
+        let perc = Math.round((parseFloat(counter) / parseFloat(len)) * 100);
+        loadingDiv.innerHTML = "Loading Photos... " + perc + "%";
+        if ( counter === len ) {
+            console.log( 'All images loaded!' );
+            loadingDiv.innerHTML = "All photos loaded. Initializing Canvas...";
+        }
+    }
+
     window.onload = function(){
-        let loading = document.getElementById("loading");
-        loading.parentElement.removeChild(loading);
+        loadingDiv.parentElement.removeChild(loadingDiv);
         init();
         initCanvas();
+        // photoDiv.hidden = true;
     };
 });
 
@@ -302,18 +325,13 @@ const singleImage = () =>{
     canvas.height = CANVAS_HEIGHT;
 };
 
-const draw = () => {
+const draw = (deltaTime) => {
     ctx.clearRect(0,0, canvas.width, canvas.height);
     ctx.fillStyle="black";
     ctx.globalAlpha = 1;
     // ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     ctx.drawImage(canvas2, 0, 0, canvas.width, canvas.height);
-
-    let currentTime = (new Date()).getTime();
-    deltaTime = (currentTime - previousTime) / 1000;
-    previousTime = currentTime;
-    let fps = Math.round(1 / deltaTime);
     
     for(let i in imagePixels){
 
@@ -349,7 +367,12 @@ const draw = () => {
 const update = () => {
     requestAnimationFrame(update);
 
-    draw();
+    let currentTime = (new Date()).getTime();
+    deltaTime = (currentTime - previousTime) / 1000;
+    previousTime = currentTime;
+    let fps = Math.round(1 / deltaTime);
+
+    draw(deltaTime);
 
     if(CONFIG.SHOW_FPS){
         ctx.globalAlpha = 1;
